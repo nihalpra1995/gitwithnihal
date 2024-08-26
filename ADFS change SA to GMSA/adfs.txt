@@ -1,0 +1,150 @@
+#folow below url to change sa to gmsa
+# install VC++ latest, ODBC 17 for sql and sqlcmd.exe as pre-requiste
+https://gbeifuss.github.io/p/adfs-change-service-account-to-gmsa/
+
+
+
+Below are the result of change made in test env.
+
+PS C:\Windows\system32> Import-Module "C:\Program Files\WindowsPowerShell\Modules\ADFSToolbox\2.0.17.0\serviceAccountModule\AdfsServiceAccountModule.psm1"
+
+PS C:\Windows\system32> Add-AdfsServiceAccountRule -ServiceAccount gmsa_ad$ -SecondaryServers clus1
+Backup of current service settings stored at C:\Windows\system32\serviceSettingsData-2024-08-25-07-08-55.xml
+Service account rule already exists.
+True
+
+PS C:\Windows\system32> Update-AdfsServiceAccount
+
+ IMPORTANT: This sample is provided AS-IS with no warranties and confers no rights.
+
+ This sample is intended only for Federation Server farms. If your AD FS 2.x deployment type is Standalone,
+ this sample does not apply to your Federation Service.
+
+ The following changes will occur as a result of executing this sample:
+	1. The AD FS service will be stopped
+	2. The AD FS database permissions will be altered to allow access for the new account
+	3. A servicePrincipalName registration will be removed from the old account and registered to the new account
+	4. The AD FS service and AdfsAppPool identity will be changed to the new account
+	5. Certificate private key permissions will be modified to allow access for the new account
+	6. The new account will be allowed user rights: "Log on as a service" and "Generate security audits"
+
+ PRE-EXECUTION TASKS
+ 1. Create the new service account in Active Directory
+ 2. Install SQLCmd.exe on each Federation Server in the farm
+	SQLCmd.exe requires the SQL Native Client to be installed
+	After SQLCmd.exe has been installed, all Powershell windows must be
+	closed and re-opened to continue with execution of this sample.
+
+	Download both installers from the following location:
+	http://www.microsoft.com/download/en/details.aspx?id=15748
+
+ If you are ready to proceed, type capital C and press Enter to continue: C
+
+ Note: The sample must be executed against each Federation Server in the farm.
+ Windows Internal Database (WID) and SQL farms are supported. Before execution can
+ begin, an operating mode must be selected. Careful consideration of the following
+ guidance is necessary to ensure the sample is executed properly on each server.
+
+ GUIDANCE FOR SELECTING AN OPERATING MODE:
+
+ WID FARM:
+ The sample must be executed on all Secondary servers before execution should
+ occur on the Primary server. The Primary server is the only server with Write access to the
+ configuration database. The Primary server must be used as the 'Final Federation Server'
+
+ Powershell command to determine whether a server is Primary or Secondary:
+	Import-Module ADFS
+	Get-AdfsSyncProperties
+
+ SQL FARM:
+ Any one server in the farm should be selected as the 'Final Federation Server'.
+ All servers in a SQL farm have Write access to the configuration database. Execute the sample on all other
+ servers in the farm before executing the sample on the server selected as the 'Final Federation Server'
+
+ Select operating mode:
+	1 - Federation Server
+	2 - Final Federation Server
+	Selection: 2
+	Operating mode: Final Federation Server
+ Checking the AD FS service
+	Success
+ Checking the Federation Service Name
+	Success
+ Collecting credentials for the new account
+	Username (domain\user): lexar\gmsa_ad$
+ gMSA account was specified. Skipping credential validation
+ Discovering current account name
+	LEXAR\LEXARADFS
+ Stopping the AD FS service
+	Success
+ Discovering SQL host
+	np:\\.\pipe\microsoft##wid\tsql\query
+ Detecting database type
+	WID
+ Checking operating mode against server role
+	Success
+ Detecting SQLCmd.exe
+	SQLCmd.exe was not found
+	See: POST-SAMPLE ITEMS THAT MUST BE EXECUTED MANUALLY.
+ Converting LEXAR\LEXARADFS to SID
+	S-1-5-21-3255502650-866626269-4218227631-1118
+ Converting LEXAR\GMSA_AD$ to SID
+	S-1-5-21-3255502650-866626269-4218227631-1117
+ Generating SQL scripts
+	Success
+ Removing SPN HOST/TESTAD.LEXAR.LOCAL from LEXAR\LEXARADFS
+	Success
+ Registering SPN HOST/TESTAD.LEXAR.LOCAL to LEXAR\GMSA_AD$
+	Success
+ Setting the AD FS service identity to LEXAR\GMSA_AD$
+	Success
+ Adding HTTP as a service dependency for ADFS Service
+
+ Providing LEXAR\GMSA_AD$ access to the Certificate Sharing Container
+	Success
+ Adding user rights for LEXAR\GMSA_AD$
+	Failed to add user rights for LEXAR\GMSA_AD$
+	See: POST-SAMPLE ITEMS THAT MUST BE EXECUTED MANUALLY
+ Starting the AD FS service
+	Skipped
+	See: POST-SAMPLE ITEMS THAT MUST BE EXECUTED MANUALLY
+
+
+
+ POST-SAMPLE ITEMS THAT MUST BE EXECUTED MANUALLY
+
+
+ 1. You must manually set User Rights Assigment for LEXAR\GMSA_AD$
+    to allow "Generate Security Audits" and "Log On As a Service".
+
+    Steps:
+    Start -> Run -> GPEdit.msc -> Computer Configuration -> Windows Settings ->
+    Security Settings -> Local Policies -> User Rights Assignment
+
+
+ 2. SQLCmd.exe was not found on this system. The SQL scripts must be executed
+    manually using either SQL Management Studio or SQLCmd.exe. The scripts currently reside
+    in C:\Users\nihal\AppData\Local\Temp\ADFSSQLScripts.
+
+    Syntax:
+    sqlcmd.exe -S np:\\.\pipe\microsoft##wid\tsql\query -i C:\Users\nihal\AppData\Local\Temp\ADFSSQLScripts\SetPermissions.sql
+    -o C:\Users\nihal\AppData\Local\Temp\ADFSSQLScripts\SetPermissions-output.log
+
+    sqlcmd.exe -S np:\\.\pipe\microsoft##wid\tsql\query -i C:\Users\nihal\AppData\Local\Temp\ADFSSQLScripts\UpdateServiceSettings.sql
+    -o C:\Users\nihal\AppData\Local\Temp\ADFSSQLScripts\UpdateServiceSettings-output.log
+
+
+ 3. Service start was skipped during execution due to post-sample needs. The service must be manually started.
+
+    Syntax:
+    net start adfssrv
+
+
+ It is recommended the old service account LEXAR\LEXARADFS be deletd once the service account has been changed on all servers.
+
+
+
+ Sample completed successfully. See ADFS_Change_Service_Account.log in the current directory for detail
+
+
+PS C:\Windows\system32> setspn -S HOST/testad.lexar.local lexar/gmsa_ad$

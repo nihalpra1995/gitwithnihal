@@ -1,0 +1,6 @@
+#on secondary
+Set-AdfsSyncProperties -Role PrimaryComputer
+
+#change back to primary again
+Set-AdfsSyncProperties -Role SecondaryComputer -PrimaryComputerName <FQDN_ADFS_Primary>
+
