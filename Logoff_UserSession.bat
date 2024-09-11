@@ -5,10 +5,8 @@ echo Checking on CLUS1...
 for /f "tokens=3 skip=1" %%s in ('query session %i% /server:clus1') do set "sess=%%s"
 if NOT [%sess%]==[] (
  echo Username:%i%; SessionId:%sess%;Servername:Clus1 
- logoff %sess% /server:clus1
- if [%sess%]==[] ( 
+ logoff %sess% /server:clus1 
  echo Session Logoff Successfully
- )
  echo Press any key to exit
  pause>nul
  exit
