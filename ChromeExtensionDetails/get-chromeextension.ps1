@@ -15,7 +15,7 @@
  6. Once it extract all the details , save it in csv file and store the output in C:
 
  .EXAMPLE
-  .\get-chrome_extension.ps1
+  .\get-chromeextension.ps1
 
  .NOTES
     Filename:   get-chromeextension.ps1
